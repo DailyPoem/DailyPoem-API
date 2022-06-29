@@ -10,3 +10,11 @@ sniffio==1.2.0
 starlette==0.17.1
 typing_extensions==4.1.1
 uvicorn==0.17.6
+pandas
+pytorch_lightning==1.2.10
+transformers==4.5.1
+torchtext==0.9.1
+torchdata
+torch==1.5.0
+transformers==4.5.1
+torchvision==0.6.0
