@@ -16,5 +16,4 @@ transformers==4.5.1
 torchtext==0.9.1
 torchdata
 torch==1.5.0
-transformers==4.5.1
 torchvision==0.6.0
