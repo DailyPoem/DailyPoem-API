@@ -7,7 +7,6 @@ import torch
 from pytorch_lightning.core.lightning import LightningModule
 from transformers import PreTrainedTokenizerFast, GPT2LMHeadModel
 
-import tracemalloc
 
 from ..DTO import GetEpitagramResponse
 
@@ -24,6 +23,9 @@ TOKENIZER = PreTrainedTokenizerFast.from_pretrained("skt/kogpt2-base-v2",
             pad_token=PAD, mask_token=MASK) 
 
 
+dataset = pd.read_csv('src/data/keyword.csv')
+keywords = dataset['keyword'].to_list()
+
 class KoGPT2Chat(LightningModule):
     def __init__(self, hparams):
         super(KoGPT2Chat, self).__init__()
@@ -31,6 +33,7 @@ class KoGPT2Chat(LightningModule):
         self.neg = -1e18
         self.kogpt2 = GPT2LMHeadModel.from_pretrained('skt/kogpt2-base-v2')
         self.loss_function = torch.nn.CrossEntropyLoss(reduction='none')
+        print("Success setting AI")
 
     def forward(self, inputs):
         # (batch, seq_len, hiddens)
@@ -44,21 +47,18 @@ class KoGPT2Chat(LightningModule):
             choice = random.sample(keywords, 3)
             q = str(choice[0] + ', ' + choice[1] + ', ' + choice[2]).strip()
             a = ''
-            while 1:
+            gen = ''
+            while gen == EOS:
+                a += gen.replace('▁', ' ')
                 input_ids = torch.LongTensor(tok.encode(U_TKN + q + SENT + sent + S_TKN + a)).unsqueeze(dim=0)
                 pred = self(input_ids)
                 gen = tok.convert_ids_to_tokens(
                     torch.argmax(
                         pred,
                         dim=-1).squeeze().numpy().tolist())[-1]
-                if gen == EOS:
-                    break
-                a += gen.replace('▁', ' ')
             return a.strip()
 
 model = KoGPT2Chat.load_from_checkpoint('src/data/model_-last.ckpt')
-dataset = pd.read_csv('src/data/keyword.csv')
-keywords = dataset['keyword'].to_list()
 
 router = APIRouter()
 @router.get("/", response_model=GetEpitagramResponse)
