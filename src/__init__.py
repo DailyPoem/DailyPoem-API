@@ -23,7 +23,7 @@ def set_middleware(app: FastAPI):
         CORSMiddleware,
         allow_origins=["*"],
         allow_credentials=True,
-        allow_methods=["*"],  # TODO 추후 정확히 메서드 입력
+        allow_methods=["GET"],
         allow_headers=["*"],
     )
 

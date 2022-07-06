@@ -7,6 +7,8 @@ import torch
 from pytorch_lightning.core.lightning import LightningModule
 from transformers import PreTrainedTokenizerFast, GPT2LMHeadModel
 
+import tracemalloc
+
 from ..DTO import GetEpitagramResponse
 
 U_TKN = '<usr>'
@@ -61,7 +63,9 @@ keywords = dataset['keyword'].to_list()
 router = APIRouter()
 @router.get("/", response_model=GetEpitagramResponse)
 def get_epitagram():
-    return {"status" : "success", "code" : "DP000", "data" : { "epitagram" : model.chat()}}
+    chat = model.chat()
+    print(chat)
+    return {"status" : "success", "code" : "DP000", "data" : { "epitagram" : chat}}
 
 
 router_list = [{"router": router, "prefix": "/epitagram"}]
