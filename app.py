@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from flask import Flask
+
 
 import random
 
@@ -6,9 +7,6 @@ import pandas as pd
 import torch
 from pytorch_lightning.core.lightning import LightningModule
 from transformers import PreTrainedTokenizerFast, GPT2LMHeadModel
-
-
-from ..DTO import GetEpitagramResponse
 
 U_TKN = '<usr>'
 S_TKN = '<sys>'
@@ -23,7 +21,7 @@ TOKENIZER = PreTrainedTokenizerFast.from_pretrained("skt/kogpt2-base-v2",
             pad_token=PAD, mask_token=MASK) 
 
 
-dataset = pd.read_csv('src/data/keyword.csv')
+dataset = pd.read_csv('data/keyword.csv')
 keywords = dataset['keyword'].to_list()
 
 class KoGPT2Chat(LightningModule):
@@ -58,14 +56,13 @@ class KoGPT2Chat(LightningModule):
                         dim=-1).squeeze().numpy().tolist())[-1]
             return a.strip()
 
-model = KoGPT2Chat.load_from_checkpoint('src/data/model_-last.ckpt')
+model = KoGPT2Chat.load_from_checkpoint('data/model_-last.ckpt')
 
-router = APIRouter()
-@router.get("/", response_model=GetEpitagramResponse)
+
+app = Flask(__name__)
+
+@app.route("/epitagram")
 def get_epitagram():
     chat = model.chat()
     print(chat)
     return {"status" : "success", "code" : "DP000", "data" : { "epitagram" : chat}}
-
-
-router_list = [{"router": router, "prefix": "/epitagram"}]

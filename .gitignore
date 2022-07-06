@@ -131,4 +131,4 @@ dmypy.json
 Scripts
 pyvenv.cfg
 
-src/data/model_-last.ckpt
+data/model_-last.ckpt
