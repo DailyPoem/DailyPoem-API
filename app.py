@@ -1,6 +1,3 @@
-from flask import Flask
-
-
 import random
 
 import pandas as pd
@@ -45,21 +42,24 @@ class KoGPT2Chat(LightningModule):
             choice = random.sample(keywords, 3)
             q = str(choice[0] + ', ' + choice[1] + ', ' + choice[2]).strip()
             a = ''
-            gen = ''
-            while gen == EOS:
-                a += gen.replace('▁', ' ')
+            while 1:
                 input_ids = torch.LongTensor(tok.encode(U_TKN + q + SENT + sent + S_TKN + a)).unsqueeze(dim=0)
                 pred = self(input_ids)
                 gen = tok.convert_ids_to_tokens(
                     torch.argmax(
                         pred,
                         dim=-1).squeeze().numpy().tolist())[-1]
+                if(gen==EOS):
+                    break
+                a += gen.replace('▁', ' ')
             return a.strip()
 
 model = KoGPT2Chat.load_from_checkpoint('data/model_-last.ckpt')
 
+from flask import Flask
 
 app = Flask(__name__)
+app.config['JSON_AS_ASCII'] = False
 
 @app.route("/epitagram")
 def get_epitagram():
