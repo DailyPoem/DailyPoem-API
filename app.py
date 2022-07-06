@@ -5,29 +5,35 @@ import torch
 from pytorch_lightning.core.lightning import LightningModule
 from transformers import PreTrainedTokenizerFast, GPT2LMHeadModel
 
-U_TKN = '<usr>'
-S_TKN = '<sys>'
-BOS = '</s>'
-EOS = '</s>'
-MASK = '<unused0>'
-SENT = '<unused1>'
-PAD = '<pad>'
+U_TKN = "<usr>"
+S_TKN = "<sys>"
+BOS = "</s>"
+EOS = "</s>"
+MASK = "<unused0>"
+SENT = "<unused1>"
+PAD = "<pad>"
 
-TOKENIZER = PreTrainedTokenizerFast.from_pretrained("skt/kogpt2-base-v2",
-            bos_token=BOS, eos_token=EOS, unk_token='<unk>',
-            pad_token=PAD, mask_token=MASK) 
+TOKENIZER = PreTrainedTokenizerFast.from_pretrained(
+    "skt/kogpt2-base-v2",
+    bos_token=BOS,
+    eos_token=EOS,
+    unk_token="<unk>",
+    pad_token=PAD,
+    mask_token=MASK,
+)
 
 
-dataset = pd.read_csv('data/keyword.csv')
-keywords = dataset['keyword'].to_list()
+dataset = pd.read_csv("data/keyword.csv")
+keywords = dataset["keyword"].to_list()
+
 
 class KoGPT2Chat(LightningModule):
     def __init__(self, hparams):
         super(KoGPT2Chat, self).__init__()
         self.hparams = hparams
         self.neg = -1e18
-        self.kogpt2 = GPT2LMHeadModel.from_pretrained('skt/kogpt2-base-v2')
-        self.loss_function = torch.nn.CrossEntropyLoss(reduction='none')
+        self.kogpt2 = GPT2LMHeadModel.from_pretrained("skt/kogpt2-base-v2")
+        self.loss_function = torch.nn.CrossEntropyLoss(reduction="none")
         print("Success setting AI")
 
     def forward(self, inputs):
@@ -35,34 +41,41 @@ class KoGPT2Chat(LightningModule):
         output = self.kogpt2(inputs, return_dict=True)
         return output.logits
 
-    def chat(self, sent='0'):
+    def chat(self, sent="0"):
         tok = TOKENIZER
         tok.tokenize(sent)
         with torch.no_grad():
             choice = random.sample(keywords, 3)
-            q = str(choice[0] + ', ' + choice[1] + ', ' + choice[2]).strip()
-            a = ''
+            q = str(choice[0] + ", " + choice[1] + ", " + choice[2]).strip()
+            a = ""
             while 1:
-                input_ids = torch.LongTensor(tok.encode(U_TKN + q + SENT + sent + S_TKN + a)).unsqueeze(dim=0)
+                input_ids = torch.LongTensor(
+                    tok.encode(U_TKN + q + SENT + sent + S_TKN + a)
+                ).unsqueeze(dim=0)
                 pred = self(input_ids)
                 gen = tok.convert_ids_to_tokens(
-                    torch.argmax(
-                        pred,
-                        dim=-1).squeeze().numpy().tolist())[-1]
-                if(gen==EOS):
+                    torch.argmax(pred, dim=-1).squeeze().numpy().tolist()
+                )[-1]
+                if gen == EOS:
                     break
-                a += gen.replace('▁', ' ')
+                a += gen.replace("▁", " ")
             return a.strip()
 
-model = KoGPT2Chat.load_from_checkpoint('data/model_-last.ckpt')
+
+model = KoGPT2Chat.load_from_checkpoint("data/model_-last.ckpt")
 
 from flask import Flask
 
 app = Flask(__name__)
-app.config['JSON_AS_ASCII'] = False
+app.config["JSON_AS_ASCII"] = False
+
 
 @app.route("/epitagram")
 def get_epitagram():
     chat = model.chat()
     print(chat)
-    return {"status" : "success", "code" : "DP000", "data" : { "epitagram" : chat}}
+    return {"status": "success", "code": "DP000", "data": {"epitagram": chat}}
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=80)
