@@ -132,3 +132,5 @@ Scripts
 pyvenv.cfg
 
 data/model_-last.ckpt
+
+static/image/**
